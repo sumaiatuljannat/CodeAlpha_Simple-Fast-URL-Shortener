@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - Something Went Wrong</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="card error-card">
+            <div class="error-code">⚠️</div>
+            <h2>Oops! An Error Occurred</h2>
+            <p class="error-description">
+                {{ error_message or "We encountered an unexpected error processing your request." }}
+            </p>
+            <div class="error-actions">
+                <a href="{{ url_for('index') }}" class="btn btn-primary">Go to Homepage</a>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>LinkSnap URL Shortener</p>
+        </footer>
+    </div>
+</body>
+</html>

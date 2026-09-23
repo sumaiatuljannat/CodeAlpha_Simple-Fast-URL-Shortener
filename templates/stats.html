@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Statistics - {{ url_data['short_code'] }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-badge">📊 LinkSnap Analytics</div>
+            <h1>Link Performance</h1>
+            <p class="subtitle">Live statistics for short code <code>{{ url_data['short_code'] }}</code></p>
+        </header>
+
+        <!-- Stats Overview Card -->
+        <div class="card stats-detail-card">
+            <!-- Click Counter Highlight -->
+            <div class="clicks-hero">
+                <div class="clicks-number">{{ url_data['click_count'] }}</div>
+                <div class="clicks-label">Total Clicks Recorded</div>
+            </div>
+
+            <hr class="divider">
+
+            <!-- Detail List -->
+            <div class="details-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Shortened URL</span>
+                    <div class="detail-value-row">
+                        <a href="{{ short_url }}" target="_blank" class="short-link">{{ short_url }}</a>
+                        <button type="button" id="copyBtn" class="btn btn-sm btn-secondary" onclick="copyToClipboard('{{ short_url }}')">
+                            <span id="copyBtnIcon">📋</span>
+                            <span id="copyBtnText">Copy</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">Original Destination URL</span>
+                    <a href="{{ url_data['original_url'] }}" target="_blank" class="detail-url" rel="noopener noreferrer">
+                        {{ url_data['original_url'] }}
+                    </a>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">Created At</span>
+                    <span class="detail-text">{{ url_data['created_at'] }} (UTC)</span>
+                </div>
+            </div>
+
+            <!-- Action Navigation -->
+            <div class="stats-actions">
+                <a href="{{ url_for('index') }}" class="btn btn-primary">&larr; Shorten Another Link</a>
+                <a href="{{ short_url }}" target="_blank" class="btn btn-outline">Visit Short Link &rarr;</a>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p><a href="{{ url_for('index') }}">Home</a> &bull; LinkSnap URL Shortener</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

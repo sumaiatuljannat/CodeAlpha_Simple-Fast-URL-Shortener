@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener - Simple, Fast & Clean</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="logo-badge">⚡ LinkSnap</div>
+            <h1>Simple & Fast URL Shortener</h1>
+            <p class="subtitle">Shorten lengthy URLs into clean, memorable links and track their clicks in real-time.</p>
+        </header>
+
+        <!-- Flash Messages (Validation errors) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            <span class="flash-icon">⚠️</span>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- URL Shortening Form -->
+        <div class="card form-card">
+            <form action="{{ url_for('shorten_url') }}" method="POST" class="shorten-form">
+                <div class="input-group">
+                    <label for="original_url" class="visually-hidden">Enter long URL</label>
+                    <input 
+                        type="url" 
+                        name="original_url" 
+                        id="original_url" 
+                        placeholder="Paste your long link here (e.g., https://example.com/very/long/path)..." 
+                        required 
+                        autocomplete="off"
+                    >
+                    <button type="submit" class="btn btn-primary">Shorten URL</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Generated Result Section -->
+        {% if short_url %}
+            <div class="card result-card">
+                <div class="result-header">
+                    <span class="success-pill">✓ Link Shortened Successfully</span>
+                </div>
+                
+                <div class="result-row">
+                    <div class="url-display">
+                        <span class="label">Your Shortened Link:</span>
+                        <a href="{{ short_url }}" target="_blank" id="shortUrlLink" class="short-link">{{ short_url }}</a>
+                    </div>
+                    <button type="button" id="copyBtn" class="btn btn-secondary" onclick="copyToClipboard('{{ short_url }}')">
+                        <span id="copyBtnIcon">📋</span>
+                        <span id="copyBtnText">Copy Link</span>
+                    </button>
+                </div>
+
+                <div class="original-preview">
+                    <span class="label">Target:</span>
+                    <span class="truncate">{{ original_url }}</span>
+                </div>
+
+                <div class="result-actions">
+                    <a href="{{ url_for('url_stats', short_code=short_code) }}" class="stats-link">
+                        📊 View Click Statistics for this link &rarr;
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Quick Stats Lookup Form -->
+        <div class="card stats-lookup-card">
+            <h3>Check Link Statistics</h3>
+            <p class="lookup-subtitle">Already have a short code? Enter it below to see click analytics.</p>
+            <form id="statsLookupForm" onsubmit="handleStatsLookup(event)" class="inline-form">
+                <input 
+                    type="text" 
+                    id="statsCodeInput" 
+                    placeholder="Enter short code (e.g. {{ short_code or 'abc123' }})" 
+                    required
+                >
+                <button type="submit" class="btn btn-outline">Check Stats</button>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Built with Python, Flask & SQLite. Pure HTML5 & CSS3.</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
