@@ -5,24 +5,25 @@ import sqlite3
 from urllib.parse import urlparse
 from flask import Flask, render_template, request, redirect, abort, flash, url_for
 
-# Initialize Flask application
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Initialize Flask application with explicit absolute paths for templates and static files
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static")
+)
 # Secret key required for Flask session/flash messages
 app.secret_key = "url-shortener-secret-key-change-in-prod"
 
-# Database file location in the same directory as app.py
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE = os.path.join(BASE_DIR, "database.db")
+import tempfile
 
-
-def get_db_connection():
-    """
-    Establishes and returns a connection to the SQLite database.
-    row_factory = sqlite3.Row allows accessing columns by name like a dictionary.
-    """
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+# Database file location:
+# Vercel serverless functions have a read-only filesystem except for the temporary directory.
+if os.environ.get("VERCEL"):
+    DATABASE = os.path.join(tempfile.gettempdir(), "database.db")
+else:
+    DATABASE = os.path.join(BASE_DIR, "database.db")
 
 
 def init_db():
@@ -30,10 +31,23 @@ def init_db():
     Initializes the database by executing schema.sql if the table doesn't exist.
     """
     schema_file = os.path.join(BASE_DIR, "schema.sql")
-    with get_db_connection() as conn:
-        with open(schema_file, mode="r", encoding="utf-8") as f:
-            conn.executescript(f.read())
-        conn.commit()
+    conn = sqlite3.connect(DATABASE)
+    with open(schema_file, mode="r", encoding="utf-8") as f:
+        conn.executescript(f.read())
+    conn.commit()
+    conn.close()
+
+
+def get_db_connection():
+    """
+    Establishes and returns a connection to the SQLite database.
+    If database file does not exist yet (e.g. fresh Vercel container), initializes it.
+    """
+    if not os.path.exists(DATABASE):
+        init_db()
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
 def generate_short_code(length=6):
@@ -197,10 +211,10 @@ def server_error(e):
     return render_template("error.html", error_message="An unexpected server error occurred."), 500
 
 
+# Initialize database on startup (works for both local development and production WSGI servers like Gunicorn)
+init_db()
+
 if __name__ == "__main__":
-    # Initialize the database on first run
-    init_db()
-    print("Database initialized successfully.")
-    print("Starting Flask development server on http://127.0.0.1:5000 ...")
-    # Run server locally on port 5000
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    print(f"Starting Flask development server on port {port} ...")
+    app.run(host="0.0.0.0", port=port, debug=True)
