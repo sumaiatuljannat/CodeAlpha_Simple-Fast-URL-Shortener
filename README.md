@@ -1,5 +1,10 @@
 # ⚡ LinkSnap - Enterprise URL Shortener & Analytics Platform
 
+## 🌐 Live Application
+👉 **[Try LinkSnap Live Here](https://linksnap-shortener.onrender.com)**
+
+[![Live Demo](https://img.shields.io/badge/Demo-Live_Website-brightgreen?style=for-the-badge&logo=render)](https://linksnap-shortener.onrender.com)
+
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Flask 3.1](https://img.shields.io/badge/Flask-3.1-black.svg)](https://flask.palletsprojects.com/)
 [![SQLite3](https://img.shields.io/badge/Database-SQLite3-003B57.svg)](https://sqlite.org/)
@@ -303,6 +308,11 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ```
 
 ---
+
+---
+
+## 👨‍💻 Submission Info
+Developed and submitted as part of the **CodeAlpha Internship Program**.
 
 ## 📄 License
 This project is open-source under the [MIT License](LICENSE).
