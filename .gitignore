@@ -1,3 +1,9 @@
 venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+database.db
+cloudflared
+cloudflared.exe
+.DS_Store
+.env

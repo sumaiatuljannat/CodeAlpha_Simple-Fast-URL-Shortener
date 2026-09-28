@@ -1,4 +1,4 @@
-Flask>=3.0.0
-gunicorn>=23.0.0
-segno>=1.6.0
-pytest>=8.0.0
+Flask
+gunicorn
+qrcode
+Pillow
