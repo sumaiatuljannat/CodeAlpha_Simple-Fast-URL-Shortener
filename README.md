@@ -1,7 +1,9 @@
 # ⚡ LinkSnap - Enterprise URL Shortener & Analytics Platform
 
 ## 🌐 Live Application
-👉 **[Try LinkSnap Live Here](https://linksnap-shortener.onrender.com)**
+👉 **[Try LinkSnap Live Here](https://linksnap-shortener-etez.onrender.com/)**
+
+[![Live Demo](https://img.shields.io/badge/Demo-Live_Website-brightgreen?style=for-the-badge&logo=render)](https://linksnap-shortener-etez.onrender.com/)
 
 [![Live Demo](https://img.shields.io/badge/Demo-Live_Website-brightgreen?style=for-the-badge&logo=render)](https://linksnap-shortener.onrender.com)
 
