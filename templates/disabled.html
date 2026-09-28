@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Disabled - LinkSnap</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="error-page-body">
+    <div class="error-container">
+        <div class="error-card">
+            <div class="error-icon-badge danger">🚫</div>
+            <h1 class="error-title">Link Is Currently Inactive</h1>
+            <p class="error-description">
+                The link <code>/{{ short_code }}</code> has been temporarily paused or disabled by its owner.
+            </p>
+            {% if title %}
+            <div class="info-pill">
+                Target: <strong>{{ title }}</strong>
+            </div>
+            {% endif %}
+            <div class="error-actions">
+                <a href="/" class="btn btn-primary">Return to LinkSnap &rarr;</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

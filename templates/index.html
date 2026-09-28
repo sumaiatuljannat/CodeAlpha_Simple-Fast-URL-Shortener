@@ -3,104 +3,504 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL Shortener - Simple, Fast & Clean</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>LinkSnap - Modern URL Shortener & Analytics</title>
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chart.js for Interactive Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <!-- Header Section -->
-        <header class="header">
-            <div class="logo-badge">⚡ LinkSnap</div>
-            <h1>Simple & Fast URL Shortener</h1>
-            <p class="subtitle">Shorten lengthy URLs into clean, memorable links and track their clicks in real-time.</p>
+    <div class="app-layout">
+        <!-- Top Navigation Bar -->
+        <header class="navbar">
+            <div class="nav-brand">
+                <a href="/" class="logo">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">LinkSnap</span>
+                </a>
+                <span class="badge badge-prod">PROD v2.0</span>
+            </div>
+
+            <div class="nav-actions">
+                <div id="authStatusArea">
+                    {% if user %}
+                        <div class="user-profile-badge">
+                            <span class="user-avatar">👤</span>
+                            <span class="user-name">{{ user.username }}</span>
+                            <button class="btn btn-sm btn-ghost" onclick="handleLogout()">Sign Out</button>
+                        </div>
+                    {% else %}
+                        <div class="guest-mode-badge">
+                            <span class="dot-indicator"></span>
+                            <span class="mode-text">Guest Mode</span>
+                            <button class="btn btn-sm btn-primary" onclick="openAuthModal('login')">Sign In / Register</button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </header>
 
-        <!-- Flash Messages (Validation errors) -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-container">
-                    {% for category, message in messages %}
-                        <div class="flash-message flash-{{ category }}">
-                            <span class="flash-icon">⚠️</span>
-                            <span>{{ message }}</span>
+        <!-- Main Content Area -->
+        <main class="container">
+            <!-- Hero / Creator Section -->
+            <section class="hero-section">
+                <h1 class="hero-title">Shorten, Share & Track Your Links</h1>
+                <p class="hero-subtitle">
+                    Fast URL shortener with custom aliases, privacy-first click analytics, QR codes, and link expiration.
+                </p>
+
+                <!-- URL Shortener Card -->
+                <div class="card shortener-card">
+                    <form id="shortenForm" onsubmit="handleShortenSubmit(event)">
+                        <div class="input-main-group">
+                            <input 
+                                type="url" 
+                                id="originalUrlInput" 
+                                name="original_url" 
+                                class="main-url-input" 
+                                placeholder="Paste your long link here (e.g. https://github.com/torvalds/linux)..." 
+                                required 
+                                autocomplete="off"
+                            >
+                            <button type="submit" id="shortenSubmitBtn" class="btn btn-primary btn-large">
+                                <span id="shortenBtnText">Shorten URL</span>
+                                <span id="shortenBtnSpinner" class="spinner hidden"></span>
+                            </button>
                         </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
 
-        <!-- URL Shortening Form -->
-        <div class="card form-card">
-            <form action="{{ url_for('shorten_url') }}" method="POST" class="shorten-form">
-                <div class="input-group">
-                    <label for="original_url" class="visually-hidden">Enter long URL</label>
-                    <input 
-                        type="url" 
-                        name="original_url" 
-                        id="original_url" 
-                        placeholder="Paste your long link here (e.g., https://example.com/very/long/path)..." 
-                        required 
-                        autocomplete="off"
-                    >
-                    <button type="submit" class="btn btn-primary">Shorten URL</button>
-                </div>
-            </form>
-        </div>
+                        <!-- Advanced Options Collapsible -->
+                        <div class="advanced-toggle-wrapper">
+                            <button type="button" class="btn-toggle-advanced" onclick="toggleAdvancedOptions()">
+                                <span id="advToggleIcon">⚙️</span>
+                                <span>Advanced Options (Custom Slug, Expiration, Tags)</span>
+                                <span id="advToggleArrow">▼</span>
+                            </button>
+                        </div>
 
-        <!-- Generated Result Section -->
-        {% if short_url %}
-            <div class="card result-card">
-                <div class="result-header">
-                    <span class="success-pill">✓ Link Shortened Successfully</span>
+                        <div id="advancedOptionsPanel" class="advanced-panel hidden">
+                            <div class="grid-2-col">
+                                <div class="form-group">
+                                    <label for="customCodeInput">Custom Alias (Optional)</label>
+                                    <div class="prefix-input-group">
+                                        <span class="input-prefix">/</span>
+                                        <input 
+                                            type="text" 
+                                            id="customCodeInput" 
+                                            placeholder="my-custom-link" 
+                                            maxlength="30"
+                                            pattern="[a-zA-Z0-9_-]+"
+                                        >
+                                    </div>
+                                    <small class="form-hint">Alphanumeric, hyphens, and underscores (3-30 chars).</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="titleInput">Link Title (Optional)</label>
+                                    <input 
+                                        type="text" 
+                                        id="titleInput" 
+                                        placeholder="e.g. Summer Campaign 2026" 
+                                        maxlength="100"
+                                    >
+                                    <small class="form-hint">Helps you identify this link in your dashboard.</small>
+                                </div>
+                            </div>
+
+                            <div class="grid-2-col">
+                                <div class="form-group">
+                                    <label for="tagsInput">Tags / Campaign (Optional)</label>
+                                    <input 
+                                        type="text" 
+                                        id="tagsInput" 
+                                        placeholder="marketing, twitter, promo"
+                                    >
+                                    <small class="form-hint">Comma-separated tags for filtering links.</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="expiresAtInput">Expiration Date & Time (Optional)</label>
+                                    <input 
+                                        type="datetime-local" 
+                                        id="expiresAtInput"
+                                    >
+                                    <small class="form-hint">Link will automatically deactivate after this time.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Alert message container -->
+                    <div id="shortenAlert" class="alert hidden"></div>
                 </div>
-                
-                <div class="result-row">
-                    <div class="url-display">
-                        <span class="label">Your Shortened Link:</span>
-                        <a href="{{ short_url }}" target="_blank" id="shortUrlLink" class="short-link">{{ short_url }}</a>
+
+                <!-- Instant Result Card (Appears upon shortening) -->
+                <div id="resultCard" class="card result-card hidden">
+                    <div class="result-header">
+                        <div class="status-indicator-badge success">
+                            <span>✓</span> Link Created Successfully!
+                        </div>
+                        <span id="resultTime" class="timestamp-text">Just now</span>
                     </div>
-                    <button type="button" id="copyBtn" class="btn btn-secondary" onclick="copyToClipboard('{{ short_url }}')">
-                        <span id="copyBtnIcon">📋</span>
-                        <span id="copyBtnText">Copy Link</span>
+
+                    <div class="result-content-grid">
+                        <div class="result-details">
+                            <label class="section-label">Your Shortened Link</label>
+                            <div class="short-link-row">
+                                <a href="#" id="resultShortUrl" target="_blank" class="short-link-anchor">...</a>
+                                <button type="button" id="copyResultBtn" class="btn btn-secondary" onclick="copyResultUrl()">
+                                    <span id="copyIcon">📋</span>
+                                    <span id="copyText">Copy</span>
+                                </button>
+                            </div>
+
+                            <div class="original-preview-box">
+                                <span class="label-muted">Target:</span>
+                                <span id="resultOriginalUrl" class="text-truncate">...</span>
+                            </div>
+
+                            <div class="result-action-bar">
+                                <button type="button" class="btn btn-outline btn-sm" onclick="openQrModalForResult()">
+                                    📷 View & Download QR Code
+                                </button>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="openStatsForShortCode(currentResultCode)">
+                                    📊 View Analytics
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Mini QR Preview -->
+                        <div class="result-qr-box">
+                            <img id="resultQrImg" src="" alt="QR Code Preview" class="mini-qr-img">
+                            <a id="resultQrDownloadBtn" href="#" class="btn btn-ghost btn-xs" download>Download QR</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Section -->
+            <section class="dashboard-section">
+                <div class="dashboard-header">
+                    <div>
+                        <h2 class="section-title">Link Management Dashboard</h2>
+                        <p class="section-subtitle">Manage, edit, monitor, and analyze all your links in one place.</p>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="loadDashboardLinks()">
+                        🔄 Refresh
                     </button>
                 </div>
 
-                <div class="original-preview">
-                    <span class="label">Target:</span>
-                    <span class="truncate">{{ original_url }}</span>
+                <!-- KPI Metric Summary Cards -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon blue">🔗</div>
+                        <div class="metric-info">
+                            <span class="metric-label">Total Links</span>
+                            <span id="kpiTotalLinks" class="metric-value">0</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon green">📈</div>
+                        <div class="metric-info">
+                            <span class="metric-label">Total Clicks</span>
+                            <span id="kpiTotalClicks" class="metric-value">0</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon purple">⚡</div>
+                        <div class="metric-info">
+                            <span class="metric-label">Active Links</span>
+                            <span id="kpiActiveLinks" class="metric-value">0</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon orange">⏳</div>
+                        <div class="metric-info">
+                            <span class="metric-label">Expired / Disabled</span>
+                            <span id="kpiInactiveLinks" class="metric-value">0</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="result-actions">
-                    <a href="{{ url_for('url_stats', short_code=short_code) }}" class="stats-link">
-                        📊 View Click Statistics for this link &rarr;
-                    </a>
-                </div>
-            </div>
-        {% endif %}
+                <!-- Filter & Search Toolbar -->
+                <div class="dashboard-toolbar">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input 
+                            type="text" 
+                            id="dashboardSearchInput" 
+                            placeholder="Search by code, URL, or title..." 
+                            oninput="debounceSearch()"
+                        >
+                    </div>
 
-        <!-- Quick Stats Lookup Form -->
-        <div class="card stats-lookup-card">
-            <h3>Check Link Statistics</h3>
-            <p class="lookup-subtitle">Already have a short code? Enter it below to see click analytics.</p>
-            <form id="statsLookupForm" onsubmit="handleStatsLookup(event)" class="inline-form">
-                <input 
-                    type="text" 
-                    id="statsCodeInput" 
-                    placeholder="Enter short code (e.g. {{ short_code or 'abc123' }})" 
-                    required
-                >
-                <button type="submit" class="btn btn-outline">Check Stats</button>
-            </form>
-        </div>
+                    <div class="toolbar-filters">
+                        <!-- Status Filter -->
+                        <select id="statusFilterSelect" class="select-filter" onchange="loadDashboardLinks()">
+                            <option value="all">All Statuses</option>
+                            <option value="active">Active Only</option>
+                            <option value="inactive">Disabled Only</option>
+                            <option value="expired">Expired Only</option>
+                        </select>
+
+                        <!-- Tag Pills Filter container -->
+                        <div id="tagPillsContainer" class="tag-pills-row"></div>
+                    </div>
+                </div>
+
+                <!-- Links Table / Grid Container -->
+                <div class="card table-card">
+                    <div class="table-responsive">
+                        <table class="data-table" id="linksTable">
+                            <thead>
+                                <tr>
+                                    <th>Short Link</th>
+                                    <th>Destination & Title</th>
+                                    <th>Tags</th>
+                                    <th>Clicks</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="linksTableBody">
+                                <tr>
+                                    <td colspan="7" class="loading-cell">
+                                        <div class="spinner"></div> Loading your links...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyState" class="empty-state hidden">
+                        <div class="empty-icon">📂</div>
+                        <h3>No links found</h3>
+                        <p>Paste a long URL above to generate your first shortened link!</p>
+                    </div>
+                </div>
+            </section>
+        </main>
 
         <!-- Footer -->
-        <footer class="footer">
-            <p>Built with Python, Flask & SQLite. Pure HTML5 & CSS3.</p>
+        <footer class="app-footer">
+            <div class="footer-content">
+                <p><strong>LinkSnap</strong> — Production URL Shortener & Analytics Platform.</p>
+                <div class="footer-links">
+                    <span>Privacy-Focused (Zero Raw IP Logging)</span> &bull;
+                    <span>REST API Enabled</span> &bull;
+                    <span>SQLite & Flask</span>
+                </div>
+            </div>
         </footer>
     </div>
+
+    <!-- ================================================================= -->
+    <!-- MODALS SECTION -->
+    <!-- ================================================================= -->
+
+    <!-- 1. Interactive Analytics Modal -->
+    <div id="analyticsModal" class="modal-overlay hidden" onclick="handleModalBackdropClick(event, 'analyticsModal')">
+        <div class="modal-container modal-large">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">📊 Click Analytics</h3>
+                    <p id="statsModalSubtitle" class="modal-subtitle">...</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('analyticsModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" id="analyticsModalBody">
+                <div id="statsLoading" class="modal-loading">
+                    <div class="spinner"></div> Loading real-time analytics...
+                </div>
+
+                <div id="statsContent" class="hidden">
+                    <!-- Top Summary Banner -->
+                    <div class="stats-summary-banner">
+                        <div class="summary-stat">
+                            <span class="stat-num" id="modalTotalClicks">0</span>
+                            <span class="stat-label">Total Clicks</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="stat-num" id="modalTopReferrer">Direct</span>
+                            <span class="stat-label">Top Referrer</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="stat-num" id="modalTopDevice">Desktop</span>
+                            <span class="stat-label">Primary Device</span>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h4 class="chart-title">Clicks Timeline (Last 30 Days)</h4>
+                            <div class="chart-container">
+                                <canvas id="timelineChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <h4 class="chart-title">Devices Breakdown</h4>
+                            <div class="chart-container doughnut-container">
+                                <canvas id="devicesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid secondary">
+                        <div class="chart-card">
+                            <h4 class="chart-title">Top Referrers</h4>
+                            <div class="chart-container">
+                                <canvas id="referrersChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <h4 class="chart-title">Browsers & Platforms</h4>
+                            <div id="browserBreakdownList" class="breakdown-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Clicks Table -->
+                    <div class="recent-clicks-section">
+                        <h4 class="chart-title">Recent Click Log (Privacy-Anonymized)</h4>
+                        <div class="table-responsive">
+                            <table class="data-table small-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Referrer</th>
+                                        <th>Device</th>
+                                        <th>Browser</th>
+                                        <th>OS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentClicksTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. QR Code Modal -->
+    <div id="qrModal" class="modal-overlay hidden" onclick="handleModalBackdropClick(event, 'qrModal')">
+        <div class="modal-container modal-small">
+            <div class="modal-header">
+                <h3 class="modal-title">📷 QR Code</h3>
+                <button class="modal-close-btn" onclick="closeModal('qrModal')">&times;</button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="qrModalUrl" class="qr-target-text">...</p>
+                <div class="qr-display-frame">
+                    <img id="modalQrImg" src="" alt="Short Link QR Code" class="large-qr-img">
+                </div>
+                <div class="qr-download-actions">
+                    <a id="modalQrSvgBtn" href="#" class="btn btn-outline" download>Download Vector (SVG)</a>
+                    <a id="modalQrPngBtn" href="#" class="btn btn-primary" download>Download Image (PNG)</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Edit Link Modal -->
+    <div id="editModal" class="modal-overlay hidden" onclick="handleModalBackdropClick(event, 'editModal')">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Edit Link Settings</h3>
+                <button class="modal-close-btn" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editLinkForm" onsubmit="handleEditSubmit(event)">
+                    <input type="hidden" id="editShortCode">
+                    <div class="form-group">
+                        <label for="editOriginalUrl">Original Destination URL</label>
+                        <input type="url" id="editOriginalUrl" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTitle">Title</label>
+                        <input type="text" id="editTitle">
+                    </div>
+                    <div class="form-group">
+                        <label for="editTags">Tags (Comma-separated)</label>
+                        <input type="text" id="editTags" placeholder="marketing, launch">
+                    </div>
+                    <div class="form-group">
+                        <label for="editExpiresAt">Expiration Date & Time</label>
+                        <input type="datetime-local" id="editExpiresAt">
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="editIsActive">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="checkbox-label">Link is Active (Allow redirects)</span>
+                    </div>
+
+                    <div id="editAlert" class="alert hidden"></div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-ghost" onclick="closeModal('editModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. User Auth Modal (Login / Register) -->
+    <div id="authModal" class="modal-overlay hidden" onclick="handleModalBackdropClick(event, 'authModal')">
+        <div class="modal-container modal-small">
+            <div class="modal-header">
+                <div class="auth-tabs">
+                    <button id="tabLoginBtn" class="tab-btn active" onclick="switchAuthTab('login')">Sign In</button>
+                    <button id="tabRegisterBtn" class="tab-btn" onclick="switchAuthTab('register')">Create Account</button>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('authModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="authForm" onsubmit="handleAuthSubmit(event)">
+                    <div class="form-group">
+                        <label for="authUsername">Username</label>
+                        <input type="text" id="authUsername" required placeholder="Choose a username">
+                    </div>
+                    <div class="form-group" id="authEmailGroup">
+                        <label for="authEmail">Email Address</label>
+                        <input type="email" id="authEmail" placeholder="name@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="authPassword">Password</label>
+                        <input type="password" id="authPassword" required minlength="6" placeholder="At least 6 characters">
+                    </div>
+
+                    <div id="authAlert" class="alert hidden"></div>
+
+                    <div class="modal-footer">
+                        <button type="submit" id="authSubmitBtn" class="btn btn-primary full-width">Sign In</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Pass initial stats deep link if present -->
+    {% if initial_stats_code %}
+    <script>
+        window.INITIAL_STATS_CODE = "{{ initial_stats_code }}";
+    </script>
+    {% endif %}
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
