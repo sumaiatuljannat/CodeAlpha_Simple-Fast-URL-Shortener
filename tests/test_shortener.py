@@ -18,6 +18,12 @@ def test_shorten_valid_url(client):
     assert data["link"]["title"] == "Example Blog"
     assert "news" in data["link"]["tags"]
     assert data["link"]["click_count"] == 0
+    assert data["link"]["qr_download_url"].endswith(
+        f"/api/links/{data['link']['short_code']}/qr?format=png&download=1"
+    )
+    assert data["link"]["barcode_download_url"].endswith(
+        f"/api/links/{data['link']['short_code']}/barcode?format=png&download=1"
+    )
 
 
 def test_shorten_custom_code(client):

@@ -2,6 +2,7 @@
 LinkSnap - Production-Grade URL Shortener Web Application
 Built with Python 3, Flask, and SQLite.
 """
+import io
 import os
 import random
 import string
@@ -13,6 +14,8 @@ from flask import (
     Flask, render_template, request, redirect,
     jsonify, session, Response, make_response, abort
 )
+from barcode import get_barcode_class
+from barcode.writer import ImageWriter, SVGWriter
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database import get_db_connection, init_db
@@ -131,6 +134,9 @@ def format_link_payload(row, host_url: str, click_count: Optional[int] = None) -
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
         "qr_code_url": f"{host_url.rstrip('/')}/api/links/{short_code}/qr",
+        "qr_download_url": f"{host_url.rstrip('/')}/api/links/{short_code}/qr?format=png&download=1",
+        "barcode_url": f"{host_url.rstrip('/')}/api/links/{short_code}/barcode",
+        "barcode_download_url": f"{host_url.rstrip('/')}/api/links/{short_code}/barcode?format=png&download=1",
         "stats_url": f"{host_url.rstrip('/')}/api/links/{short_code}/stats"
     }
 
@@ -666,6 +672,34 @@ def api_link_qr(short_code):
     response.headers["Content-Type"] = "image/svg+xml"
     if download:
         response.headers["Content-Disposition"] = f'attachment; filename="linksnap-{short_code}.svg"'
+    return response
+
+
+@app.route("/api/links/<short_code>/barcode", methods=["GET"])
+def api_link_barcode(short_code):
+    """Renders or downloads a Code 128 barcode for the shortened URL."""
+    format_type = request.args.get("format", "svg").lower()
+    if format_type not in {"svg", "png"}:
+        return jsonify({"success": False, "error": "Unsupported barcode format. Use svg or png."}), 400
+
+    with get_db_connection() as conn:
+        link = conn.execute("SELECT id FROM links WHERE short_code = ?", (short_code,)).fetchone()
+        if not link:
+            abort(404)
+
+    target_url = f"{request.host_url.rstrip('/')}/{short_code}"
+    writer = ImageWriter() if format_type == "png" else SVGWriter()
+    barcode = get_barcode_class("code128")(target_url, writer=writer)
+    output = io.BytesIO()
+    barcode.write(output, options={"write_text": False})
+    barcode_bytes = output.getvalue()
+
+    response = make_response(barcode_bytes)
+    response.headers["Content-Type"] = "image/png" if format_type == "png" else "image/svg+xml"
+    if request.args.get("download", "0") == "1":
+        response.headers["Content-Disposition"] = (
+            f'attachment; filename="linksnap-code128-{short_code}.{format_type}"'
+        )
     return response
 
 

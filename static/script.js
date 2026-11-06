@@ -114,7 +114,7 @@ async function handleShortenSubmit(e) {
         document.getElementById('resultOriginalUrl').textContent = data.link.original_url;
         document.getElementById('resultOriginalUrl').title = data.link.original_url;
         document.getElementById('resultQrImg').src = data.link.qr_data_uri;
-        document.getElementById('resultQrDownloadBtn').href = `/api/links/${data.link.short_code}/qr?download=1&format=png`;
+        document.getElementById('resultQrDownloadBtn').href = data.link.qr_download_url;
 
         document.getElementById('resultCard').classList.remove('hidden');
         document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -245,6 +245,7 @@ function renderLinks(links) {
                     <div class="action-btns-group">
                         <button class="icon-btn" title="Copy Short Link" onclick="copyToClipboard('${escapeHtml(link.short_url)}')">📋</button>
                         <button class="icon-btn" title="View QR Code" onclick="openQrModal('${escapeHtml(link.short_code)}', '${escapeHtml(link.short_url)}')">📷</button>
+                        <button class="icon-btn" title="View Code 128 Barcode" onclick="openBarcodeModal('${escapeHtml(link.short_code)}', '${escapeHtml(link.short_url)}')">▥</button>
                         <button class="icon-btn" title="View Click Analytics" onclick="openStatsForShortCode('${escapeHtml(link.short_code)}')">📊</button>
                         <button class="icon-btn" title="Edit Link" onclick="openEditModal('${escapeHtml(link.short_code)}')">✏️</button>
                         <button class="icon-btn danger" title="Delete Link" onclick="deleteLink('${escapeHtml(link.short_code)}')">🗑️</button>
@@ -512,6 +513,20 @@ function openQrModal(shortCode, shortUrl) {
     document.getElementById('modalQrSvgBtn').href = `/api/links/${encodeURIComponent(shortCode)}/qr?format=svg&download=1`;
     document.getElementById('modalQrPngBtn').href = `/api/links/${encodeURIComponent(shortCode)}/qr?format=png&download=1`;
     openModal('qrModal');
+}
+
+function openBarcodeModalForResult() {
+    if (!currentResultCode || !currentResultUrl) return;
+    openBarcodeModal(currentResultCode, currentResultUrl);
+}
+
+function openBarcodeModal(shortCode, shortUrl) {
+    const barcodeUrl = `/api/links/${encodeURIComponent(shortCode)}/barcode`;
+    document.getElementById('barcodeModalUrl').textContent = shortUrl;
+    document.getElementById('modalBarcodeImg').src = `${barcodeUrl}?format=svg`;
+    document.getElementById('modalBarcodeSvgBtn').href = `${barcodeUrl}?format=svg&download=1`;
+    document.getElementById('modalBarcodePngBtn').href = `${barcodeUrl}?format=png&download=1`;
+    openModal('barcodeModal');
 }
 
 // ============================================================================

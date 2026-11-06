@@ -165,6 +165,9 @@
                                 <button type="button" class="btn btn-outline btn-sm" onclick="openQrModalForResult()">
                                     📷 View & Download QR Code
                                 </button>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="openBarcodeModalForResult()">
+                                    ▥ View & Download Barcode
+                                </button>
                                 <button type="button" class="btn btn-outline btn-sm" onclick="openStatsForShortCode(currentResultCode)">
                                     📊 View Analytics
                                 </button>
@@ -412,7 +415,27 @@
         </div>
     </div>
 
-    <!-- 3. Edit Link Modal -->
+    <!-- 3. Linear Barcode Modal -->
+    <div id="barcodeModal" class="modal-overlay hidden" onclick="handleModalBackdropClick(event, 'barcodeModal')">
+        <div class="modal-container modal-small">
+            <div class="modal-header">
+                <h3 class="modal-title">▥ Code 128 Barcode</h3>
+                <button class="modal-close-btn" onclick="closeModal('barcodeModal')">&times;</button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="barcodeModalUrl" class="qr-target-text">...</p>
+                <div class="barcode-display-frame">
+                    <img id="modalBarcodeImg" src="" alt="Short Link Code 128 Barcode" class="large-barcode-img">
+                </div>
+                <div class="qr-download-actions">
+                    <a id="modalBarcodeSvgBtn" href="#" class="btn btn-outline" download>Download Vector (SVG)</a>
+                    <a id="modalBarcodePngBtn" href="#" class="btn btn-primary" download>Download Image (PNG)</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Edit Link Modal -->
     <div id="editModal" class="modal-overlay hidden" onclick="handleModalBackdropClick(event, 'editModal')">
         <div class="modal-container">
             <div class="modal-header">

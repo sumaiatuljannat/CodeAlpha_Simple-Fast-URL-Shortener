@@ -40,6 +40,7 @@ A complete, production-grade URL Shortener and Link Management web application b
 - **Automatic Expiration (TTL):** Set custom expiration dates & times; expired links cleanly return HTTP 410 Gone.
 - **Campaign Tags:** Categorize links with tags (e.g. `marketing`, `newsletter`) for instant filtering.
 - **Integrated QR Codes:** High-resolution vector SVG and raster PNG QR codes generated on-the-fly for every link, with direct one-click download buttons.
+- **Code 128 Barcodes:** Generate a linear barcode for each short URL and preview or download it as SVG or PNG.
 
 ### 🔐 Security & Multi-Tenant Authentication
 - **Dual Access Modes:**
@@ -200,11 +201,14 @@ All API requests and responses utilize standard JSON and appropriate HTTP status
     "click_count": 0,
     "created_at": "2026-09-28 22:00:00",
     "qr_code_url": "http://127.0.0.1:5000/api/links/torvalds-linux/qr",
+    "qr_download_url": "http://127.0.0.1:5000/api/links/torvalds-linux/qr?format=png&download=1",
     "stats_url": "http://127.0.0.1:5000/api/links/torvalds-linux/stats",
     "qr_data_uri": "data:image/svg+xml;charset=utf-8,..."
   }
 }
 ```
+
+`qr_download_url` downloads the QR code as a PNG attachment. The QR endpoint also supports SVG downloads with `?format=svg&download=1`.
 
 ### 2. List Links
 - **Endpoint:** `GET /api/links`
@@ -285,6 +289,12 @@ All API requests and responses utilize standard JSON and appropriate HTTP status
 
 ### 6. QR Code Endpoint
 - **Endpoint:** `GET /api/links/<short_code>/qr`
+- **Query Parameters:**
+  - `format`: `svg` (default vector) or `png` (raster image).
+  - `download`: `1` to trigger direct attachment download.
+
+### 7. Code 128 Barcode Endpoint
+- **Endpoint:** `GET /api/links/<short_code>/barcode`
 - **Query Parameters:**
   - `format`: `svg` (default vector) or `png` (raster image).
   - `download`: `1` to trigger direct attachment download.

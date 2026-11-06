@@ -90,3 +90,32 @@ def test_api_qr_generation(client):
     assert png_res.status_code == 200
     assert png_res.headers["Content-Type"] == "image/png"
     assert png_res.data.startswith(b"\x89PNG")
+
+    # 3. Download responses force an attachment with a filename.
+    download_res = client.get("/api/links/qr-link/qr?format=png&download=1")
+    assert download_res.status_code == 200
+    assert download_res.headers["Content-Disposition"] == 'attachment; filename="linksnap-qr-link.png"'
+    assert download_res.data.startswith(b"\x89PNG")
+
+
+def test_api_code128_barcode_generation_and_download(client):
+    client.post("/api/shorten", json={
+        "original_url": "https://example.com/barcode-test",
+        "custom_code": "barcode-link"
+    })
+
+    svg_res = client.get("/api/links/barcode-link/barcode?format=svg")
+    assert svg_res.status_code == 200
+    assert svg_res.headers["Content-Type"].startswith("image/svg+xml")
+    assert b"<svg" in svg_res.data
+
+    png_res = client.get("/api/links/barcode-link/barcode?format=png&download=1")
+    assert png_res.status_code == 200
+    assert png_res.headers["Content-Type"] == "image/png"
+    assert png_res.headers["Content-Disposition"] == (
+        'attachment; filename="linksnap-code128-barcode-link.png"'
+    )
+    assert png_res.data.startswith(b"\x89PNG")
+
+    invalid_format_res = client.get("/api/links/barcode-link/barcode?format=jpg")
+    assert invalid_format_res.status_code == 400
